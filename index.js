@@ -7,7 +7,7 @@ app.use(express.json());
 // Route to handle date requests
 app.get('/api/:date?', (req, res) => {
   let inputDate = req.params.date;
-  
+
   // If no date is provided, use current time
   if (!inputDate) {
     inputDate = new Date();
@@ -17,10 +17,10 @@ app.get('/api/:date?', (req, res) => {
     
     // Check if the date is invalid
     if (isNaN(inputDate.getTime())) {
-      return res.json({ error: "Invalid Date" });
+      return res.status(400).json({ error: "Invalid Date" });
     }
   }
-  
+
   // Format the response
   res.json({
     unix: inputDate.getTime(), // Unix timestamp in milliseconds
