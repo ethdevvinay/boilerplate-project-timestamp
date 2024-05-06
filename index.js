@@ -23,8 +23,8 @@ app.get('/api/:date?', (req, res) => {
   
   // Format the response
   res.json({
-    unix: inputDate.getTime(),
-    utc: inputDate.toUTCString()
+    unix: inputDate.getTime(), // Unix timestamp in milliseconds
+    utc: inputDate.toUTCString() // UTC string format
   });
 });
 
