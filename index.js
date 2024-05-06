@@ -1,182 +1,43 @@
-
-// server.js
-// where your node app starts
-
-// init project
-var express = require('express');
-var bodyParser = require('body-parser');
-
-var app = express();
-
-// parse application/json
-app.use(bodyParser.json());
-app.use(express.urlencoded({
-  extended: true
-}));
+const express = require("express");
+const app = express();
 
 // enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
-// so that your API is remotely testable by FCC 
-var cors = require('cors');
-app.use(cors({ optionsSuccessStatus: 200 }));  // some legacy browsers choke on 204
+// so that your API is remotely testable by FCC
+const cors = require("cors");
+app.use(cors({ optionSuccessStatus: 200 })); // some legacy browsers choke on 204
 
-// http://expressjs.com/en/starter/static-files.html
-app.use(express.static('public'));
+app.use(express.static("public"));
 
-// http://expressjs.com/en/starter/basic-routing.html
+// index
 app.get("/", function (req, res) {
-  res.sendFile(__dirname + '/views/index.html');
+  res.sendFile(__dirname + "/views/index.html");
 });
 
-// your first API endpoint... 
-app.get("/api/hello", function (req, res) {
-  res.json({ greeting: 'hello API' });
-});
+// timestamp API
+app.get("/api/timestamp/:date?", (req, res) => {
+  const givenDate = req.params.date;
+  let date;
 
-app.get("/api/timestamp/:date?", function (req, res) {
-
-  //if param are empty, them use current date.
-  if (!req.params.date) {
-    var dateUnix = Date.now().valueOf();
-    var dateUTC = new Date().toUTCString();
-    res.json({
-      unix: dateUnix,
-      utc: dateUTC
-    });
-  }
-  else {
-
-    const { date } = req.params;
-    const isNumber = !isNaN(parseFloat(date)) && isFinite(date);
-    var dataToParseDate = isNumber ? parseInt(date) : date;
-
-    if (!Date.parse(new Date(dataToParseDate))) {
-      res.status(400).json({
-        error: "Invalid Date"
-      });
-    }
-
-    var unix = new Date(dataToParseDate).valueOf();
-    var utc = new Date(dataToParseDate).toUTCString()
-
-    res.json({
-      unix: unix,
-      utc: utc
-    });
-  }
-
-});
-
-app.get("/api/whoami", function (req, res) {
-
-  const ipaddress = req.ip;
-  const language = req.headers["accept-language"];
-  const software = req.headers['user-agent'];
-
-  res.json({
-    ipaddress: ipaddress,
-    language: language,
-    software: software
-  });
-
-});
-
-
-//REST api shorturl
-const mapUrl = new Map();
-var idUrl = 1;
-
-app.post("/api/shorturl/:url?", function (req, res) {
-
-  console.log(req.body);
-
-  if (!req.body.url) {
-    res.status(400).json({
-      error: 'invalid url'
-    });
-  }
-
-  const myUrl = req.body.url;
-  const isIdUrl = !isNaN(parseFloat(myUrl)) && isFinite(myUrl);
-
-  if (!isIdUrl) {
-    if (!isURL(myUrl)) {
-      res.status(400).json({
-        error: 'invalid url'
-      });
-    }
-    mapUrl.set(idUrl, myUrl);
+  // check if no date provided
+  if (!givenDate) {
+    date = new Date();
   } else {
-    const myRedirect = mapUrl.get(parseInt(myUrl));
-
-    if (myRedirect) {
-      res.redirect(myRedirect)
-    }
-
-    res.status(400).json({
-      error: 'invalid url'
-    });
+    // check if unix time:
+    //    number string multiplied by 1 gives this number, data string gives NaN
+    const checkUnix = givenDate * 1;
+    date = isNaN(checkUnix) ? new Date(givenDate) : new Date(checkUnix);
   }
 
-  console.log(mapUrl);
-
-  res.json({
-    original_url: myUrl,
-    short_url: idUrl++
-  });
-
-});
-
-app.get("/api/shorturl/:url?", function (req, res) {
-
-  if (!req.params.url) {
-    res.status(400).json({
-      error: 'invalid url'
-    });
-  }
-
-  const myUrl = req.params.url;
-  const isIdUrl = !isNaN(parseFloat(myUrl)) && isFinite(myUrl);
-
-  if (!isIdUrl) {
-    res.status(400).json({
-      error: 'invalid url'
-    });
+  //check if valid format
+  if (date == "Invalid Date") {
+    res.json({ error: "Invalid Date" });
   } else {
-    const myRedirect = mapUrl.get(parseInt(myUrl));
-
-    if (myRedirect) {
-      res.redirect(myRedirect)
-    }
-
-    res.status(400).json({
-      error: 'invalid url'
-    });
+    const unix = date.getTime();
+    const utc = date.toUTCString();
+    res.json({ unix, utc });
   }
-
 });
 
-const isURL= (str) => {
-  var pattern = new RegExp('^((ft|htt)ps?:\\/\\/)?'+ // protocol
-  '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name and extension
-  '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
-  '(\\:\\d+)?'+ // port
-  '(\\/[-a-z\\d%@_.~+&:]*)*'+ // path
-  '(\\?[;&a-z\\d%@_.,~+&:=-]*)?'+ // query string
-  '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
-  return pattern.test(str);
-}
-
-app.post("/api/name", function (req, res) {
-  // Handle the data in the request
-  var string = req.body.first + " " + req.body.last;
-  res.json({ name: string });
-});
-
-// listen for requests :)
-// var listener = app.listen(process.env.PORT, function () {
-//   console.log('Your app is listening on port ' + listener.address().port);
-// });
-
-app.listen(3000, function () {
-  console.log('[INFO] listem in port 3000');
+var listener = app.listen(process.env.PORT, function () {
+  console.log("Your app is listening on port " + listener.address().port);
 });
